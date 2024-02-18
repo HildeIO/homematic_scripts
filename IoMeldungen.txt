@@ -1,0 +1,85 @@
+!Bei jeder Änderung von Alarmmeldungen oder Servicemeldungen, alle Meldungen an Firebase zustellen
+
+object oTmpArray = dom.GetObject(ID_SERVICES);
+
+if(oTmpArray) {
+
+	string sTmp;
+	string sdev;
+	string dev_type;
+	integer err_value;
+	string kategorie = "SERVICE";
+	string nachricht;
+	var name;
+	var timestamp;
+	string meldung = "";
+						
+	foreach(sTmp, oTmpArray.EnumIDs()){
+	
+		object oTmp = dom.GetObject(sTmp);
+		
+		if(oTmp){
+		
+			if(oTmp.IsTypeOf( OT_ALARMDP) && (oTmp.AlState() == asOncoming )){
+			
+				var trigDP  = dom.GetObject(oTmp.AlTriggerDP());
+				var channel = dom.GetObject(trigDP.Channel());
+				name = dom.GetObject(channel).Name();
+				timestamp = dom.GetObject(trigDP).Timestamp();
+				string s_timestamp = timestamp.ToString();
+				err_value   = trigDP.Value();
+				var sdev    = dom.GetObject(channel.Device());
+				dev_type    = channel.HssType().Substr(0, 9);
+				var nachricht   = trigDP.AlDestMapDP().Name().StrValueByIndex(".", 2 );
+				
+				if (nachricht != "STICKY_UNREACH") {
+				
+					!Übersetzen der Fehlermeldung
+					if (nachricht == "CONFIG_PENDING") {
+						nachricht = "Konfigurationsdaten stehen zur Uebertragung an";
+					}
+					if (nachricht == "LOWBAT") {
+						nachricht = "Batteriestand niedrig";
+					}
+					if (nachricht == "UNREACH") {
+						nachricht = "Kommunikation zur Zeit gestoert";
+					}
+					if (nachricht == "DEVICE_IN_BOOTLOADER") 
+					{
+						nachricht = "Geraet startet neu";
+					}
+					if (nachricht == "UPDATE_PENDING") 
+					{
+						nachricht = "Update verfuegbar";
+					}
+					if (nachricht == "ERROR") 
+					{
+						if (err_value == 7)
+						{
+							nachricht = "SABOTAGE";
+						}
+						
+					} 
+					
+					if(meldung != "") {
+						meldung = meldung + ",";
+					}
+					
+					meldung = meldung + "{\"kategorie\":\""# kategorie #"\",\"nachricht\":\""# nachricht#"\",\"name\":\""# name #"\",\"timestamp\":\""# timestamp #"\"}";
+
+				} !if (nachricht != "STICKY_UNREACH")
+				
+			} !if(oTmp.IsTypeOf( OT_ALARMDP) && (oTmp.AlState() == asOncoming ))
+		
+		} !if(oTmp)
+	
+	} !foreach(sTmp, oTmpArray.EnumIDs())
+	
+	meldung = "[" + meldung.Replace('ü', 'ue').Replace('ä', 'ae').Replace('ö', 'oe').Replace('ß', 'ss') + "]";
+	
+	string meldung_controller = dom.GetObject(ID_SYSTEM_VARIABLES).Get("Systemvariable_URL_HildeIO").State() + "meldung/create";		
+	string curl = "curl -X POST -H \"Content-Type: application/json\" "# meldung_controller #" -d '" + meldung + "'";
+
+	dom.GetObject("CUxD.CUX2801001:1.CMD_EXEC").State(curl);
+
+} !if(oTmpArray)

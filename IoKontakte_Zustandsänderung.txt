@@ -1,0 +1,13 @@
+!Bei Zustandsänderung wird der Kontakt in ioKontakte aktualisiert
+
+object aktuellesDevice = dom.GetObject("$src$").Device();
+
+string iseId = dom.GetObject(aktuellesDevice).ID();
+string kontaktName = dom.GetObject(aktuellesDevice).Name();
+string kontaktValue = dom.GetObject(aktuellesDevice).State().ToString();
+
+string channels_controller= dom.GetObject(ID_SYSTEM_VARIABLES).Get("Systemvariable_URL_HildeIO").State() + "kontakte/update";
+
+string curl = "curl -X PUT -H \"Content-Type: application/json\" "#channels_controller#" -d '{\"iseId\":"#iseId #",\"kontaktName\":\""#kontaktName#"\",\"kontaktValue\":\""#kontaktValue#"\"}'";
+
+dom.GetObject("CUxD.CUX2801001:1.CMD_EXEC").State(curl);

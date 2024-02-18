@@ -1,0 +1,6 @@
+!Prüfen und ggfs. Setzen der Wochenplan-Temperatur
+
+string heizkoerper_controller= dom.GetObject(ID_SYSTEM_VARIABLES).Get("Systemvariable_URL_HildeIO").State() + "heizkoerper/checkWochenplan";
+string curl = "curl -X PUT -H \"Content-Type: application/json\" "#heizkoerper_controller#"";
+
+dom.GetObject("CUxD.CUX2801001:1.CMD_EXEC").State(curl);

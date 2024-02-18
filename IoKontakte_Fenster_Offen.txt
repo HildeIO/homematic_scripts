@@ -1,0 +1,6 @@
+!Prüfen ob Fenster offen sind
+
+string kontakte_controller= dom.GetObject(ID_SYSTEM_VARIABLES).Get("Systemvariable_URL_HildeIO").State() + "kontakte/checkKontakteOffen";
+string curl = "curl -X GET -H \"Content-Type: application/json\" "#kontakte_controller#"";
+
+dom.GetObject("CUxD.CUX2801001:1.CMD_EXEC").State(curl);

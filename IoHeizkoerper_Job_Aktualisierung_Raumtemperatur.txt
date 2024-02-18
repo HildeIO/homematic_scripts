@@ -1,0 +1,44 @@
+!Stündliche Aktualisierung der Raumtemperatur
+
+var thermostate = dom.GetObject("Heizung");
+string iseId;
+string name;
+string address;
+string datenpunkt;
+string interfaceType ="HmIP-RF";
+string type = "double";
+string valueKey = "SET_POINT_TEMPERATURE";
+object heizkoerperDPs;
+string temperaturIst;
+string temperaturSoll;
+string heizkoerper_controller = dom.GetObject(ID_SYSTEM_VARIABLES).Get("Systemvariable_URL_HildeIO").State() + "heizkoerper/updateHeizkoerper2Firestore";
+string curl;
+
+!alle Thermostate durchlaufen
+foreach(iseId, thermostate.EnumUsedIDs())
+{
+	!Datenpunkte des aktuellen Heizkörpers
+	heizkoerperDPs = dom.GetObject(iseId).DPs().EnumUsedNames();
+	
+	!alle Datenpunkte durchlaufen
+	foreach(datenpunkt, heizkoerperDPs.EnumIDs()){
+		
+		object datenpunktAktuell = dom.GetObject(datenpunkt);
+
+		!prüfen ob der aktuelle Datenpunkt SET_POINT_TEMPERATURE ist
+		if(datenpunktAktuell.Name().StrValueByIndex(".", 2 ) == "SET_POINT_TEMPERATURE"){
+			temperaturSoll = datenpunktAktuell.Value().ToString(1);
+		}
+
+		!prüfen ob der aktuelle Datenpunkt ACTUAL_TEMPERATURE ist
+		if(datenpunktAktuell.Name().StrValueByIndex(".", 2 ) == "ACTUAL_TEMPERATURE"){
+			temperaturIst = datenpunktAktuell.Value().ToString(1);
+		}		
+	}
+
+	name = dom.GetObject(iseId).Name().Replace("ö", "oe");
+	address = dom.GetObject(iseId).Address();
+	
+	curl = "curl -X PUT -H \"Content-Type: application/json\" "#heizkoerper_controller#" -d '{\"iseId\":\""#iseId#"\",\"name\":\""#name#"\",\"interfaceType\":\""#interfaceType#"\",\"valueKey\":\""#valueKey#"\",\"address\":\""#address#"\",\"type\":\""#type#"\",\"temperaturIst\":\""#temperaturIst#"\",\"temperaturSoll\":\""#temperaturSoll#"\"}'";
+	dom.GetObject("CUxD.CUX2801001:1.CMD_EXEC").State(curl);	
+}
